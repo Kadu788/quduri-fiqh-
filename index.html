@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mukhtasar al-Quduri — Fiqh Search</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f7f5f0;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: #2c2c2a;
+    color: #fff;
+    padding: 1.5rem 1rem 1.25rem;
+    text-align: center;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .header p {
+    font-size: 13px;
+    color: #b4b2a9;
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem;
+  }
+
+  .chapter-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 1rem;
+    scrollbar-width: none;
+  }
+
+  .chapter-scroll::-webkit-scrollbar { display: none; }
+
+  .pill {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    border: 1px solid #d3d1c7;
+    background: #fff;
+    color: #5f5e5a;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .pill.active {
+    background: #2c2c2a;
+    border-color: #2c2c2a;
+    color: #fff;
+  }
+
+  .search-wrap {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .search-wrap input {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 15px;
+    border: 1px solid #d3d1c7;
+    border-radius: 12px;
+    background: #fff;
+    color: #1a1a1a;
+    outline: none;
+  }
+
+  .search-wrap input:focus {
+    border-color: #888780;
+  }
+
+  .search-wrap button {
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    background: #2c2c2a;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .search-wrap button:hover { background: #444441; }
+  .search-wrap button:disabled { background: #888780; cursor: not-allowed; }
+
+  .suggestions-label {
+    font-size: 11px;
+    color: #888780;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 1.5rem;
+  }
+
+  .chip {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid #d3d1c7;
+    color: #5f5e5a;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .chip:hover {
+    border-color: #888780;
+    color: #1a1a1a;
+  }
+
+  .loading {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 1rem 0;
+    color: #888780;
+    font-size: 14px;
+  }
+
+  .loading.show { display: flex; }
+
+  .dots { display: flex; gap: 4px; }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #888780;
+    animation: pulse 1.2s infinite;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  .result {
+    display: none;
+    background: #fff;
+    border: 1px solid #d3d1c7;
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .result.show { display: block; }
+
+  .result-chapter {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: #f1efe8;
+    color: #444441;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .result-answer {
+    font-size: 15px;
+    line-height: 1.75;
+    color: #1a1a1a;
+    white-space: pre-wrap;
+  }
+
+  .result-source {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #f1efe8;
+    font-size: 12px;
+    color: #888780;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .result-source::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888780' stroke-width='2'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  .disclaimer {
+    font-size: 12px;
+    color: #888780;
+    line-height: 1.6;
+    padding: 12px 14px;
+    background: #fff;
+    border-radius: 10px;
+    border-left: 3px solid #d3d1c7;
+    margin-top: 1rem;
+  }
+
+  .error {
+    background: #fcebeb;
+    border-color: #f09595;
+    color: #a32d2d;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📖 Mukhtasar al-Quduri</h1>
+  <p>Hanafi fiqh search — answers sourced only from al-Quduri</p>
+</div>
+
+<div class="container">
+
+  <div class="chapter-scroll">
+    <div class="pill active" onclick="selectChapter(this,'All')">All chapters</div>
+    <div class="pill" onclick="selectChapter(this,'Tahara')">Tahara</div>
+    <div class="pill" onclick="selectChapter(this,'Salah')">Salah</div>
+    <div class="pill" onclick="selectChapter(this,'Sawm')">Sawm</div>
+    <div class="pill" onclick="selectChapter(this,'Zakah')">Zakah</div>
+    <div class="pill" onclick="selectChapter(this,'Nikah')">Nikah</div>
+    <div class="pill" onclick="selectChapter(this,'Talaq')">Talaq</div>
+    <div class="pill" onclick="selectChapter(this,'Hajj')">Hajj</div>
+    <div class="pill" onclick="selectChapter(this,'Buyuw')">Buyuw</div>
+    <div class="pill" onclick="selectChapter(this,'Inheritance')">Inheritance</div>
+  </div>
+
+  <div class="search-wrap">
+    <input type="text" id="queryInput" placeholder="Ask a fiqh question..." />
+    <button id="searchBtn" onclick="askQuestion()">Search</button>
+  </div>
+
+  <div class="suggestions-label">Common questions</div>
+  <div class="chips">
+    <div class="chip" onclick="setQuery(this.innerText)">What breaks wudu?</div>
+    <div class="chip" onclick="setQuery(this.innerText)">Obligations of ghusl?</div>
+    <div class="chip" onclick="setQuery(this.innerText)">What invalidates salah?</div>
+    <div class="chip" onclick="setQuery(this.innerText)">What breaks the fast?</div>
+    <div class="chip" onclick="setQuery(this.innerText)">Nisab for zakah?</div>
+    <div class="chip" onclick="setQuery(this.innerText)">Wiping over khuffs ruling?</div>
+    <div class="chip" onclick="setQuery(this.innerText)">Conditions of Friday prayer?</div>
+    <div class="chip" onclick="setQuery(this.innerText)">Types of talaq?</div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="dots">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <span>Searching al-Quduri...</span>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-chapter" id="resultChapter">Tahara</div>
+    <div class="result-answer" id="resultAnswer"></div>
+    <div class="result-source" id="resultSource"></div>
+  </div>
+
+  <div class="disclaimer">
+    Answers are based on the Mukhtasar al-Quduri by Imam Abu'l-Husayn al-Quduri (362–428 AH).
+    For binding personal rulings, consult a qualified Hanafi scholar.
+  </div>
+
+</div>
+
+<script>
+let selectedChapter = 'All';
+
+function selectChapter(el, chapter) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  selectedChapter = chapter;
+}
+
+function setQuery(text) {
+  document.getElementById('queryInput').value = text;
+  askQuestion();
+}
+
+document.getElementById('queryInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') askQuestion();
+});
+
+async function askQuestion() {
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query) return;
+
+  const btn = document.getElementById('searchBtn');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('result');
+
+  btn.disabled = true;
+  loading.classList.add('show');
+  result.classList.remove('show', 'error');
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, chapter: selectedChapter })
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) throw new Error(data.error || 'Request failed');
+
+    const answer = data.answer;
+    const lines = answer.split('\n');
+    const srcIdx = lines.findIndex(l => l.startsWith('Source:'));
+    const sourceLine = srcIdx >= 0 ? lines[srcIdx] : 'Source: Mukhtasar al-Quduri';
+    const mainAnswer = srcIdx >= 0
+      ? lines.slice(0, srcIdx).join('\n').trim()
+      : answer;
+
+    document.getElementById('resultChapter').textContent =
+      selectedChapter !== 'All' ? selectedChapter : 'al-Quduri';
+    document.getElementById('resultAnswer').textContent = mainAnswer;
+    document.getElementById('resultSource').textContent = sourceLine;
+    result.classList.add('show');
+
+  } catch (err) {
+    document.getElementById('resultChapter').textContent = 'Error';
+    document.getElementById('resultAnswer').textContent =
+      'Something went wrong: ' + err.message;
+    document.getElementById('resultSource').textContent = '';
+    result.classList.add('show', 'error');
+  }
+
+  btn.disabled = false;
+  loading.classList.remove('show');
+}
+</script>
+</body>
+</html>
